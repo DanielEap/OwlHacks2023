@@ -1,1 +1,3 @@
-print("help");
+print("help")
+
+print("goodbye")
