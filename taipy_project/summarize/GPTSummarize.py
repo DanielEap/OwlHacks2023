@@ -1,68 +1,47 @@
-
-######################################################################################################
-# In this section, we set the user authentication, user and app ID, model details, and the URL of 
-# the text we want as an input. Change these strings to run your own example.
-######################################################################################################
-
-# Your PAT (Personal Access Token) can be found in the portal under Authentification
-PAT = '19d8e93560884750b37a6ce7efa6f157'
-# Specify the correct user_id/app_id pairings
-# Since you're making inferences outside your app's scope
-USER_ID = 'openai'
-APP_ID = 'chat-completion'
-# Change these to whatever model and text URL you want to use
-MODEL_ID = 'GPT-4'
-MODEL_VERSION_ID = 'ad16eda6ac054796bf9f348ab6733c72'
-RAW_TEXT =''
-# To use a hosted text file, assign the url variable
-# TEXT_FILE_URL = 'https://samples.clarifai.com/negative_sentence_12.txt'
-# Or, to use a local text file, assign the url variable
-# TEXT_FILE_LOCATION = 'YOUR_TEXT_FILE_LOCATION_HERE'
-
-############################################################################
-# YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
-############################################################################
-
 from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
 
-channel = ClarifaiChannel.get_grpc_channel()
-stub = service_pb2_grpc.V2Stub(channel)
+def clarifai_api_call(raw_text):
+    api_key = '19d8e93560884750b37a6ce7efa6f157'
+    user_id = 'openai'
+    app_id = 'chat-completion'
+    model_id = 'GPT-4'
+    model_version_id = 'ad16eda6ac054796bf9f348ab6733c72'
+    
+    # Initialize the Clarifai gRPC channel
+    channel = ClarifaiChannel.get_grpc_channel()
+    stub = service_pb2_grpc.V2Stub(channel)
 
-metadata = (('authorization', 'Key ' + PAT),)
+    metadata = (('authorization', 'Key ' + api_key),)
 
-userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=APP_ID)
+    userDataObject = resources_pb2.UserAppIDSet(user_id=user_id, app_id=app_id)
 
-# To use a local text file, uncomment the following lines
-# with open(TEXT_FILE_LOCATION, "rb") as f:
-#    file_bytes = f.read()
-RAW_TEXT = input("Enter your text: ")
-post_model_outputs_response = stub.PostModelOutputs(
-    service_pb2.PostModelOutputsRequest(
-        user_app_id=userDataObject,  # The userDataObject is created in the overview and is required when using a PAT
-        model_id=MODEL_ID,
-        version_id=MODEL_VERSION_ID,  # This is optional. Defaults to the latest model version
-        inputs=[
-            resources_pb2.Input(
-                data=resources_pb2.Data(
-                    text=resources_pb2.Text(
-                        raw=RAW_TEXT
-                        # url=TEXT_FILE_URL
-                        # raw=file_bytes
+    # Make the API call
+    post_model_outputs_response = stub.PostModelOutputs(
+        service_pb2.PostModelOutputsRequest(
+            user_app_id=userDataObject,
+            model_id=model_id,
+            version_id=model_version_id,
+            inputs=[
+                resources_pb2.Input(
+                    data=resources_pb2.Data(
+                        text=resources_pb2.Text(
+                            raw=raw_text
+                        )
                     )
                 )
-            )
-        ]
-    ),
-    metadata=metadata
-)
-if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
-    print(post_model_outputs_response.status)
-    raise Exception(f"Post model outputs failed, status: {post_model_outputs_response.status.description}")
+            ]
+        ),
+        metadata=metadata
+    )
 
-# Since we have one input, one output will exist here
-output = post_model_outputs_response.outputs[0]
+    if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
+        print(post_model_outputs_response.status)
+        raise Exception(f"Post model outputs failed, status: {post_model_outputs_response.status.description}")
 
-print("Completion:\n")
-print(output.data.text.raw)
+    # Since we have one input, one output will exist here
+    output = post_model_outputs_response.outputs[0]
+
+    return output.data.text.raw
+
