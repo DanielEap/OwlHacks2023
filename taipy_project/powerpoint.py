@@ -1,6 +1,5 @@
 from pptx import Presentation
 import PyPDF2
-import fitz
 
 def getInfo(file):
     if file.find(".pptx") >= 0:
